@@ -32,6 +32,10 @@ class CommentController extends Controller
     {
         $validated = $request->validate([
             'message' => 'required|string|max:255'
+        ],
+        [
+            'message.required' => 'Campo obrigatório',
+            'message.max' => 'O tamanho máximo é de 255 caracteres'
         ]);
 
         $request->user()->comments()->create($validated);
