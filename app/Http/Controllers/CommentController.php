@@ -14,7 +14,9 @@ class CommentController extends Controller
      */
     public function index(): View
     {
-        return view('comments.index');
+        return view('comments.index', [
+            'comments' => Comment::with('user')->latest()->get()
+        ]);
     }
 
     /**

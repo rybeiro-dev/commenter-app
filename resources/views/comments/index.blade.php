@@ -11,5 +11,23 @@
             <x-input-error :messages="$errors->get('message')" class="mt-2" />
             <x-primary-button class="mt-4">Comentar</x-primary-button>
         </form>
+
+
+            <div class="mt-6 bg-white shadow-sm rounded-lg divide-y">
+                @foreach($comments as $comment)
+                    <div class="p-6 flex space-x-2">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <span class="text-gray-800">{{$comment->user->name}}</span>
+                                    <small class="ml-2 text-sm text-gray-600" >{{$comment->created_at->format('d/m/Y H:i')}}</small>
+                                </div>
+                            </div>
+                            <p>{{$comment->message}}</p>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
     </div>
 </x-app-layout>

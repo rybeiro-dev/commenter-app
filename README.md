@@ -16,7 +16,7 @@ php artisan breeze:install blade
 
 ## TIPAGEM
 Uma camada importe de segurança é trabalhar com tipagem. É recomendado o uso de tipagem forte para aumentar a segurança                                                                                                                                                     
-dos projeto e deve ser declarado nas Models e Controllers.
+do projeto e deve ser declarado nas Models e Controllers.
 ```php
 # Isso é suficiente para deixar o arquivo seguro
 declare(strict_types=1)
@@ -88,7 +88,7 @@ $request->user()
 
 ## RELACIONAMENTOS
 O relacionamento a nível de banco de dados devem ser efetuados no Model
-##### HasMany - Tem muito
+##### HasMany - Tem muitos
 ```php
 # HasMany na Model User. Por padrão como são muitos comentários o nome da função é no plural
 public function comments(): HasMany
@@ -138,4 +138,34 @@ $teste = Comment::all()
 
 # se a model não for encontrar
 $teste = \App\Models\Comment::all()
+```
+
+## VIEW
+Passando dados para view.
+
+CONTROLLER
+```php
+return view('comments.index', [
+    'comments' => Comment::with('user')->latest()->get();
+]);
+```
+
+Exibindo os dados
+```php
+# view/comments/index.blade.php
+<div class="mt-6 bg-white shadow-sm rounded-lg divide-y">
+    @foreach($comments as $comment)
+        <div class="p-6 flex space-x-2">
+            <div class="flex-1">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-gray-800">{{$comment->user->name}}</span>
+                        <small class="ml-2 text-sm text-gray-600" >{{$comment->created_at->format('d/m/Y H:i')}}</small>
+                    </div>
+                </div>
+                <p>{{$comment->message}}</p>
+            </div>
+        </div>
+    @endforeach
+</div>
 ```
