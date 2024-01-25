@@ -21,7 +21,22 @@
                                 <div>
                                     <span class="text-gray-800">{{$comment->user->name}}</span>
                                     <small class="ml-2 text-sm text-gray-600" >{{$comment->created_at->format('d/m/Y H:i')}}</small>
+                                    @unless ($comment->created_at->eq($comment->updated_at))
+                                        <small class="text-sm text-gray-600">{{__('Editado')}}</small>
+                                    @endunless
                                 </div>
+                                <x-dropdown>
+                                    <x-slot name="trigger">
+                                        <button>
+                                            ...
+                                        </button>
+                                    </x-slot>
+                                    <x-slot name="content">
+                                        <x-dropdown-link :href="route('comments.edit', $comment)">
+                                            {{__('Alterar')}}
+                                        </x-dropdown-link>
+                                    </x-slot>
+                                </x-dropdown>
                             </div>
                             <p>{{$comment->message}}</p>
                         </div>

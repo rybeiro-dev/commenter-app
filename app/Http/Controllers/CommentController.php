@@ -58,7 +58,9 @@ class CommentController extends Controller
      */
     public function edit(Comment $comment)
     {
-        //
+        $this->authorize('update', $comment);
+
+        return view('comments.edit');
     }
 
     /**
@@ -66,7 +68,13 @@ class CommentController extends Controller
      */
     public function update(Request $request, Comment $comment)
     {
-        //
+        $this->authorize('update', $comment);
+
+        $validated = $request->validate([
+            'message' => 'required|string|max:255'
+        ]);
+
+        return to_route('comments.index');
     }
 
     /**

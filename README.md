@@ -28,6 +28,10 @@ Redirecionamento no arquivo de rotas (web.php)
 Route::get('/', function(){
     return to_route('dashboard');
 })
+
+Route::resource('comments', \App\Http\Controllers\CommentController::class)
+  ->only(['index', 'store', 'edit', 'update'])
+  ->auth(['auth', 'verified'])
 ```
 
 Redirecionamento no controller
@@ -168,4 +172,28 @@ Exibindo os dados
         </div>
     @endforeach
 </div>
+```
+## CONTROLLER
+No Controller é possível verificar se um usuário tem permissão para efetuar uma alteração utilizando o método reservado
+do authorize().
+
+```php
+#verifica se o usuário logado tem permissão para alterar
+$this->authorize('update', $comment);
+```
+
+#### AUTHORIZE e POLICIES
+O método authorize() bloqueia qualquer tentativa de acesso. Para criar as permissões é necessário criar as politica de
+de permissão ou as Polices. Importante para aumentar as segurança das aplicações.
+
+```php
+# make:policy <Nome_da_Policy> --model=<Nome_do_Model>
+php artisan make:policy CommentPolicy --model=Comment
+
+# Configurando a policy
+public function update(User $user, Comment $comment)
+{
+    # retorna um booleano.
+    return $comment->user()->is($user);
+}
 ```
