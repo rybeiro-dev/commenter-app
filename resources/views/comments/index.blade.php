@@ -25,18 +25,28 @@
                                         <small class="text-sm text-gray-600">{{__('Editado')}}</small>
                                     @endunless
                                 </div>
-                                <x-dropdown>
-                                    <x-slot name="trigger">
-                                        <button>
-                                            ...
-                                        </button>
-                                    </x-slot>
-                                    <x-slot name="content">
-                                        <x-dropdown-link :href="route('comments.edit', $comment)">
-                                            {{__('Alterar')}}
-                                        </x-dropdown-link>
-                                    </x-slot>
-                                </x-dropdown>
+                                @if($comment->user()->is(auth()->user()))
+                                    <x-dropdown>
+                                        <x-slot name="trigger">
+                                            <button>
+                                                ...
+                                            </button>
+                                        </x-slot>
+                                        <x-slot name="content">
+                                            <x-dropdown-link :href="route('comments.edit', $comment)">
+                                                {{__('Alterar')}}
+                                            </x-dropdown-link>
+                                            <form method="post" action="{{route('comments.destroy', $comment)}}">
+                                                @csrf
+                                                @method('delete')
+                                                <x-dropdown-link :href="route('comments.destroy', $comment)" onclick="event.preventDefault(); this.closest('form').submit();">
+                                                    {{__('Excluir')}}
+                                                </x-dropdown-link>
+                                            </form>
+                                        </x-slot>
+
+                                    </x-dropdown>
+                                @endif
                             </div>
                             <p>{{$comment->message}}</p>
                         </div>

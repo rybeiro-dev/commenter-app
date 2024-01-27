@@ -60,7 +60,7 @@ class CommentController extends Controller
     {
         $this->authorize('update', $comment);
 
-        return view('comments.edit');
+        return view('comments.edit', compact('comment'));
     }
 
     /**
@@ -74,6 +74,8 @@ class CommentController extends Controller
             'message' => 'required|string|max:255'
         ]);
 
+        $comment->update($validated);
+
         return to_route('comments.index');
     }
 
@@ -82,6 +84,10 @@ class CommentController extends Controller
      */
     public function destroy(Comment $comment)
     {
-        //
+        $this->authorize('delete', $comment);
+
+        $comment->delete();
+
+        return to_route('comments.index');
     }
 }
