@@ -197,3 +197,58 @@ public function update(User $user, Comment $comment)
     return $comment->user()->is($user);
 }
 ```
+
+## Notifications
+Através da criação de um classe de notificação o envio através de email, sms, slack etc.
+```php
+# gerar a classe de notificação via artisan
+php artisan make:notification NewCommentNotification
+```
+
+#### Configurando a classe NewCommentNotification
+```php
+<?php
+declare(strict_types=1);
+
+# ... código omitido
+use Illuminate\Support\Str;
+# ... código omitido
+
+public function __construct(puclic Comment $comment) { }
+
+public function toMail(object $notifiable): MailMessage
+{
+    return (new MailMessage)
+      ->subject("Novo comentario")
+      ->gretting("Novo comentário de {this->comment->user->name}")
+      ->line(Str::limit($this->comment->message, limit:50))
+      ->action('Ver comentário', route('comments.index'))
+      ->line('Obrigado por usar nossa aplicação');
+}
+
+# ... código omitido
+
+```
+
+## Events
+Para usar os eventos temos que seguir pelo menos 3 passos:
+- Criar o evento
+- Criar um listener
+- Registrar o listener no evento.
+
+```php
+# Criando o evento
+php artisan make:event CommentCreatedEvent
+
+# configurando a classe do evento para receber o comentario
+public function __construct(public Comment $comment) {}
+
+# e no Model Comment, configurar o dispatches para quando o comentário for criado chame o evento
+
+protected $dispatchesEvents = [ 'created' => CommentCreatedEvent::class ];
+
+# Listener
+
+
+# Registrar o evento
+```
