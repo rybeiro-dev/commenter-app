@@ -1,7 +1,9 @@
 <?php
-
+declare(type_strict=1);
 namespace App\Providers;
 
+use App\Events\CommentCreatedEvent;
+use App\Listeners\SendCommentCreatedNotifications;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -15,6 +17,10 @@ class EventServiceProvider extends ServiceProvider
      * @var array<class-string, array<int, class-string>>
      */
     protected $listen = [
+        CommentCreatedEvent::class => [
+            SendCommentCreatedNotifications::class
+        ],
+
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],

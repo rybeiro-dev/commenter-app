@@ -206,8 +206,8 @@ php artisan make:notification NewCommentNotification
 ```
 
 #### Configurando a classe NewCommentNotification
+
 ```php
-<?php
 declare(strict_types=1);
 
 # ... código omitido
@@ -220,7 +220,7 @@ public function toMail(object $notifiable): MailMessage
 {
     return (new MailMessage)
       ->subject("Novo comentario")
-      ->gretting("Novo comentário de {this->comment->user->name}")
+      ->greeting("Novo comentário de {$this->comment->user->name}")
       ->line(Str::limit($this->comment->message, limit:50))
       ->action('Ver comentário', route('comments.index'))
       ->line('Obrigado por usar nossa aplicação');
@@ -236,6 +236,8 @@ Para usar os eventos temos que seguir pelo menos 3 passos:
 - Criar um listener
 - Registrar o listener no evento.
 
+Importante incluir o disparador de eventos no Modelo: ```php $dispatchesEvents = [];```
+
 ```php
 # Criando o evento
 php artisan make:event CommentCreatedEvent
@@ -246,9 +248,69 @@ public function __construct(public Comment $comment) {}
 # e no Model Comment, configurar o dispatches para quando o comentário for criado chame o evento
 
 protected $dispatchesEvents = [ 'created' => CommentCreatedEvent::class ];
+```
 
-# Listener
+## Listener
+o listener é o observer no Laravel, o listener é o responsável por disparar os eventos. O Listener trabalha com filas, deve-se configurar .env
+
+```php
+# criando o listener
+php artisan make:listener SendCommentCreatedNotifications --event=CommentCreatedEvent
+
+# configurando a classe
+<?php
+declare(type_strict=1);
+# ... trecho de código omitido
+
+class SendCommentCreatedNotifications implements ShouldQueue {
+    public function handle(CommentCreatedEvent $event): void
+    {
+        foreach(user::whereNot('id', $event->comment->user_id)->cursor() as $user){
+            $user->notify(new NewCommentNotification($event->comment));
+        }
+    }
+}
+```
 
 
 # Registrar o evento
+Registrar no listner no evento para ouvir todas as criações de Commentários.
+
+No diretório Provider abrir a classe EventServiceProvider
+
+```php
+# adicionar CommentCreatedEvent::class ...
+
+protected $listen = [
+    CommentCreatedEvent::class => [
+        SendCommentCreatedNotifications::class,
+    ],
+
+    # ... trecho de código omitido
+];
 ```
+
+## Mailpit - Teste de envio de email
+Caixa de email fake para testar o envio de email, antes de subir em produção. Para isso vamos subir o serviço do Mailpit incluíndo configuração no docker-compose.yaml
+
+```php
+# configuração 
+mailpit:
+  image: 'axllent/mailpit:latest'
+  container_name: mailpit
+  restart: unless-stopped
+  ports:
+    - '${FORWARD_MAILPIT_PORT:-1025}:1025' 
+    - '${FORWARD_MAILPIT_UI_PORT:-8025}:8025'
+  networks:
+    - sail
+```
+
+## QUEUE
+
+# DICAS
+laravel/debugbar é para tirar metrica de execução de processos e só funciona em modo debug=true
+
+
+# IMPORTANTE:
+O método _cursor()_ utilizado em uma _query_ do Laravel evita de carregar todos os registros na mémoria de uma vez para não sobrecarregar a aplicação.
