@@ -1,22 +1,25 @@
 # Commenter App
 ## Criando o projeto passo a passo
 Nesse projeto vou utilizar mysql e redis.
+
 ### Criando o projeto
+
 ```shell
 curl -s "https://laravel.build/example-app?with=mysql,redis" | bash
 ```
 
 ### Incluindo a camada de autenticação
+
 ```shell
 composer require laravel/breeze --dev
 
 php artisan breeze:install blade
 ```
 
-
 ## TIPAGEM
 Uma camada importe de segurança é trabalhar com tipagem. É recomendado o uso de tipagem forte para aumentar a segurança                                                                                                                                                     
 do projeto e deve ser declarado nas Models e Controllers.
+
 ```php
 # Isso é suficiente para deixar o arquivo seguro
 declare(strict_types=1)
@@ -24,6 +27,7 @@ declare(strict_types=1)
 
 ## ROUTE
 Redirecionamento no arquivo de rotas (web.php)
+
 ```php
 Route::get('/', function(){
     return to_route('dashboard');
@@ -40,7 +44,7 @@ return to_route('comments.index');
 ```
 
 Visualizando todas as rotas via terminal
-```php
+```shell
 php artisan route:list
 ```
 
@@ -61,13 +65,15 @@ config('commenter.app_name');
 ```
 ## VALIDATE
 Validação de campos do formulário.
+
 ```php
 $validated = $request->validate([
     'message' => 'required|string|max:255'
 ]);
 ```
 
-Mensagens de validação personalizada
+Incluir Mensagens de validação personalizada
+
 ```php
 $validated = $request->validate([
     'message' => 'required|string|max:255'
@@ -76,6 +82,45 @@ $validated = $request->validate([
 'message.required' => 'Campo obrigatório',
 'message.max' => 'Limite de caracter excedido. O limite é de 255 caracteres'
 ]);
+```
+
+Importante sempre manter o seu código limpo e com Principio de responsabilidade única.
+Vou refator o código para manter a validação isolada.
+
+```shell
+php artisan make:request CommentValidationRequest
+```
+
+A classe foi criada no diretório Http/Requests. Vamos efetuar a configuração.
+
+```php
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'message' => 'required|string|max:255'
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'message.required' => 'Campo obrigatório',
+            'message.max' => 'O tamanho máximo é de 255 caracteres'
+        ];
+    }
 ```
 
 ## AUTHENTICATE
@@ -92,9 +137,11 @@ $request->user()
 
 ## RELACIONAMENTOS
 O relacionamento a nível de banco de dados devem ser efetuados no Model
+
 ##### HasMany - Tem muitos
 ```php
-# HasMany na Model User. Por padrão como são muitos comentários o nome da função é no plural
+# HasMany na Model User. Por padrão como são muitos comentários o nome da 
+# função é no plural
 public function comments(): HasMany
 {
   return $this->hasMany(Comment::class);
@@ -103,7 +150,8 @@ public function comments(): HasMany
 ##### BelongsTo - Pertence há um
 
 ```php
-# BelongsTo na Model Comment. Por padrão como é pertence há um o nome da função é no singular.
+# BelongsTo na Model Comment. Por padrão como é pertence há um o nome da função 
+# é no singular.
 public function user(): BelongsTo
 {
   return $this->belongsTo(Comment::class);
@@ -112,6 +160,7 @@ public function user(): BelongsTo
 
 ## MIGRATION
 Incluindo a chave estrageira de user nos comentários. No arquivo de migration de comments.
+
 ```php
 # Editar esse arquivos e incluir a linha a seguir.
 $table->foreignId('user_id')
@@ -134,9 +183,12 @@ protected $guarded = ['id']; # Assim permito todos os campos exceto o id
 
 ## Terminal Laraval Tinker
 É possível interagir com o projeto através do terminal.
-```php
-php artisan tinker
 
+```shell
+php artisan tinker
+```
+
+```php
 # dentro do terminal
 $teste = Comment::all()
 
@@ -164,7 +216,9 @@ Exibindo os dados
                 <div class="flex justify-between items-center">
                     <div>
                         <span class="text-gray-800">{{$comment->user->name}}</span>
-                        <small class="ml-2 text-sm text-gray-600" >{{$comment->created_at->format('d/m/Y H:i')}}</small>
+                        <small class="ml-2 text-sm text-gray-600" >
+                          {{$comment->created_at->format('d/m/Y H:i')}}
+                        </small>
                     </div>
                 </div>
                 <p>{{$comment->message}}</p>
@@ -174,22 +228,40 @@ Exibindo os dados
 </div>
 ```
 ## CONTROLLER
-No Controller é possível verificar se um usuário tem permissão para efetuar uma alteração utilizando o método reservado
-do authorize().
+No Controller é possível verificar se um usuário tem permissão para efetuar uma 
+alteração utilizando o método reservado do authorize().
 
 ```php
 #verifica se o usuário logado tem permissão para alterar
 $this->authorize('update', $comment);
 ```
 
-#### AUTHORIZE e POLICIES
-O método authorize() bloqueia qualquer tentativa de acesso. Para criar as permissões é necessário criar as politica de
-de permissão ou as Polices. Importante para aumentar as segurança das aplicações.
+Importante se estiver utilizando o Principio de resposabilidade única, a chamada 
+de validação:
 
 ```php
+# exemplo de validação no update
+public function update(CommentValidationRequest $request, Comment $comment)
+    {
+        $this->authorize('update', $comment);
+
+        $comment->update($request->validated());
+
+        return to_route('comments.index');
+    }
+```
+
+#### AUTHORIZE e POLICIES
+O método authorize() bloqueia qualquer tentativa de acesso. Para criar as 
+permissões é necessário criar as politica de permissão ou as Polices. Importante 
+para aumentar as segurança das aplicações.
+
+```shell
 # make:policy <Nome_da_Policy> --model=<Nome_do_Model>
 php artisan make:policy CommentPolicy --model=Comment
+```
 
+```php
 # Configurando a policy
 public function update(User $user, Comment $comment)
 {
@@ -200,7 +272,7 @@ public function update(User $user, Comment $comment)
 
 ## Notifications
 Através da criação de um classe de notificação o envio através de email, sms, slack etc.
-```php
+```shell
 # gerar a classe de notificação via artisan
 php artisan make:notification NewCommentNotification
 ```
@@ -236,7 +308,7 @@ Para usar os eventos temos que seguir pelo menos 3 passos:
 - Criar um listener
 - Registrar o listener no evento.
 
-Importante incluir o disparador de eventos no Modelo: ```php $dispatchesEvents = [];```
+Importante incluir o disparador de eventos no Modelo: ```$dispatchesEvents = [];```
 
 ```php
 # Criando o evento
@@ -251,14 +323,16 @@ protected $dispatchesEvents = [ 'created' => CommentCreatedEvent::class ];
 ```
 
 ## Listener
-o listener é o observer no Laravel, o listener é o responsável por disparar os eventos. O Listener trabalha com filas, deve-se configurar .env
+o listener é o observer no Laravel, o listener é o responsável por disparar os 
+eventos. O Listener trabalha com filas, deve-se configurar .env
 
-```php
+```shell
 # criando o listener
 php artisan make:listener SendCommentCreatedNotifications --event=CommentCreatedEvent
+```
 
+```php
 # configurando a classe
-<?php
 declare(type_strict=1);
 # ... trecho de código omitido
 
@@ -271,7 +345,6 @@ class SendCommentCreatedNotifications implements ShouldQueue {
     }
 }
 ```
-
 
 # Registrar o evento
 Registrar no listner no evento para ouvir todas as criações de Commentários.
@@ -291,7 +364,8 @@ protected $listen = [
 ```
 
 ## Mailpit - Teste de envio de email
-Caixa de email fake para testar o envio de email, antes de subir em produção. Para isso vamos subir o serviço do Mailpit incluíndo configuração no docker-compose.yaml
+Caixa de email fake para testar o envio de email, antes de subir em produção. 
+Para isso vamos subir o serviço do Mailpit incluíndo configuração no docker-compose.yaml
 
 ```php
 # configuração 
@@ -307,10 +381,19 @@ mailpit:
 ```
 
 ## QUEUE
+Podemos utilizar o Redis como fila para essa aplicação, configurar no 
+arquivo .env a variável QUEUE_CONNECTION=redis mas para processar a fila é 
+necessário executar o seguinte comando.
+
+```shell
+php artisan queue:work
+```
 
 # DICAS
-laravel/debugbar é para tirar metrica de execução de processos e só funciona em modo debug=true
+laravel/debugbar é para tirar metrica de execução de processos e só funciona em 
+modo debug=true
 
 
 # IMPORTANTE:
-O método _cursor()_ utilizado em uma _query_ do Laravel evita de carregar todos os registros na mémoria de uma vez para não sobrecarregar a aplicação.
+O método _cursor()_ utilizado em uma _query_ do Laravel evita de carregar todos
+ os registros na mémoria de uma vez para não sobrecarregar a aplicação.
